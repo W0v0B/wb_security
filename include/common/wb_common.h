@@ -2,7 +2,6 @@
 #define WB_COMMON_H
 
 #include <stdio.h>
-#include <string.h>
 
 #include "wb_config.h"
 #include "wb_type.h"

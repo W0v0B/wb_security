@@ -2,6 +2,7 @@
 
 #define SHA1_BLOCK_SIZE 64
 #define SHA1_DIGEST_SIZE 20
+#define SHA1_TAIL_LEN 8
 
 typedef struct {
     wb_hash_base_ctx_t base;
@@ -12,17 +13,103 @@ typedef struct {
 
 static void wb_sha1_internal_compute(void *ctx, const uint8_t *block)
 {
+    wb_sha1_ctx_t *sha1_ctx = (wb_sha1_ctx_t *)ctx;
+    uint32_t w[80];
+    uint32_t a, b, c, d, e, temp;
+    int i;
 
+    for (i = 0; i < 16; i++) {
+        w[i] = bytes_to_uint32_be(block + i * 4);
+    }
+    
+    for (; i < 80; i++) {
+        temp = w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16];
+        w[i] = left_rotate(temp, 1);
+    }
+
+    a = sha1_ctx->state[0];
+    b = sha1_ctx->state[1];
+    c = sha1_ctx->state[2];
+    d = sha1_ctx->state[3];
+    e = sha1_ctx->state[4];
+
+    for (i = 0; i < 20; i++) {
+        temp = left_rotate(a, 5) + ((b & c) | (~b & d)) + e + w[i] + 0x5A827999;
+        e = d;
+        d = c;
+        c = left_rotate(b, 30);
+        b = a;
+        a = temp;
+    }
+    for (; i < 40; i++) {
+        temp = left_rotate(a, 5) + (b ^ c ^ d) + e + w[i] + 0x6ED9EBA1;
+        e = d;
+        d = c;
+        c = left_rotate(b, 30);
+        b = a;
+        a = temp;
+    }
+    for (; i < 60; i++) {
+        temp = left_rotate(a, 5) + ((b & c) | (b & d) | (c & d)) + e + w[i] + 0x8F1BBCDC;
+        e = d;
+        d = c;
+        c = left_rotate(b, 30);
+        b = a;
+        a = temp;
+    }
+    for (; i < 80; i++) {
+        temp = left_rotate(a, 5) + (b ^ c ^ d) + e + w[i] + 0xCA62C1D6;
+        e = d;
+        d = c;
+        c = left_rotate(b, 30);
+        b = a;
+        a = temp;
+    }
+    sha1_ctx->state[0] += a;
+    sha1_ctx->state[1] += b;
+    sha1_ctx->state[2] += c;
+    sha1_ctx->state[3] += d;
+    sha1_ctx->state[4] += e;
+    sha1_ctx->bit_count += SHA1_BLOCK_SIZE * 8;
 }
 
 static void wb_sha1_internal_padding(void *ctx)
 {
-    
+    wb_sha1_ctx_t *sha1_ctx = (wb_sha1_ctx_t *)ctx;
+    uint64_t total_bits = sha1_ctx->bit_count + (sha1_ctx->base.buffer_len * 8);
+    sha1_ctx->buffer[sha1_ctx->base.buffer_len++] = 0x80;
+    if (sha1_ctx->base.buffer_len > SHA1_BLOCK_SIZE - SHA1_TAIL_LEN) {
+        WB_MEMSET(sha1_ctx->buffer + sha1_ctx->base.buffer_len, 0, SHA1_BLOCK_SIZE - sha1_ctx->base.buffer_len);
+        sha1_ctx->base.compute_func(ctx, sha1_ctx->buffer);
+        sha1_ctx->base.buffer_len = 0;
+    }
+    WB_MEMSET(sha1_ctx->buffer + sha1_ctx->base.buffer_len, 0, SHA1_BLOCK_SIZE - SHA1_TAIL_LEN - sha1_ctx->base.buffer_len);
+    wb_write_uint64_be(sha1_ctx->buffer + SHA1_BLOCK_SIZE - SHA1_TAIL_LEN, total_bits);
+    sha1_ctx->base.compute_func(ctx, sha1_ctx->buffer);
 }
 
 static void wb_sha1_internal_destroy(void *ctx, uint8_t *digest)
 {
-    
+    wb_sha1_ctx_t *sha1_ctx = (wb_sha1_ctx_t *)ctx;
+    for (int i = 0; i < 5 && digest != NULL; i++) {
+        wb_write_uint32_be(digest + i * 4, sha1_ctx->state[i]);
+    }
+    WB_MEMSET(sha1_ctx, 0, sizeof(wb_sha1_ctx_t));
+    WB_FREE(sha1_ctx);
+    sha1_ctx = NULL;
+}
+
+static void wb_sha1_internal_reset(void *ctx)
+{
+    wb_sha1_ctx_t *sha1_ctx = (wb_sha1_ctx_t *)ctx;
+    sha1_ctx->bit_count = 0;
+    sha1_ctx->state[0] = 0x67452301;
+    sha1_ctx->state[1] = 0xEFCDAB89;
+    sha1_ctx->state[2] = 0x98BADCFE;
+    sha1_ctx->state[3] = 0x10325476;
+    sha1_ctx->state[4] = 0xC3D2E1F0;
+    sha1_ctx->base.buffer_len = 0;
+    WB_MEMSET(sha1_ctx->buffer, 0, SHA1_BLOCK_SIZE);
 }
 
 error_t wb_sha1_internal_start(void **ctx_handle)
@@ -33,9 +120,11 @@ error_t wb_sha1_internal_start(void **ctx_handle)
     ctx->base.type = WB_HASH_TYPE_SHA1;
     ctx->base.block_size = SHA1_BLOCK_SIZE;
     ctx->base.buffer_ptr = ctx->buffer;
+    ctx->base.buffer_len = 0;
     ctx->base.compute_func = wb_sha1_internal_compute;
     ctx->base.padding_func = wb_sha1_internal_padding;
     ctx->base.destroy_func = wb_sha1_internal_destroy;
+    ctx->base.reset_func = wb_sha1_internal_reset;
     ctx->base.magic = (uintptr_t)ctx ^ ctx->base.type ^ WB_HASH_CTX_MAGIC;
 
     ctx->bit_count = 0;

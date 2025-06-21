@@ -10,6 +10,7 @@
 #define WB_FREE(ptr)                    free(ptr)
 #define WB_CALLOC(num, size)            calloc(num, size)
 #define WB_MEMCPY(dest, src, size)      memcpy(dest, src, size)
+#define WB_MEMSET(ptr, value, size)     memset(ptr, value, size)
 
 #endif // WB_USER_CONFIG
 

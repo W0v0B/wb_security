@@ -22,9 +22,10 @@ typedef struct wb_hash_base_ctx_t wb_hash_base_ctx_t;
 typedef void (*hash_compute_func_t)(void *ctx, const uint8_t *block);
 typedef void (*hash_padding_func_t)(void *ctx);
 typedef void (*hash_destroy_func_t)(void *ctx, uint8_t *digest);
+typedef void (*hash_reset_func_t)(void *ctx);
 
 struct wb_hash_base_ctx_t{
-    uint32_t magic;
+    uintptr_t magic;
     wb_hash_type_t type;
     uint32_t block_size;
     uint32_t buffer_len;
@@ -32,6 +33,7 @@ struct wb_hash_base_ctx_t{
     hash_compute_func_t compute_func;
     hash_padding_func_t padding_func;
     hash_destroy_func_t destroy_func;
+    hash_reset_func_t reset_func;
 };
 
 #endif // WB_HASH_STRUCT_H

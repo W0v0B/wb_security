@@ -26,6 +26,7 @@ typedef unsigned int error_t;
 #define WB_CRYPTO_EMPTY_VALUE     ((error_t)(0x02))
 #define WB_CRYPTO_MALLOC_FAIL     ((error_t)(0x03))
 #define WB_CRYPTO_CTX_INVALID     ((error_t)(0x04))
+#define WB_CRYPTO_INVALID_TYPE    ((error_t)(0x01))
 
 #define WB_ERROR(module, code)    (WB_CRYPTO_ERR_FLAG | (module) | (code))
 #define WB_HASH_ERROR(code)       (WB_CRYPTO_ERR_FLAG | WB_CRYPTO_MODULE_HASH | (code))

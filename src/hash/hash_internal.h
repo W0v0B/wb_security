@@ -5,23 +5,27 @@
 
 error_t wb_sha1_internal_start(void **ctx_handle);
 
+error_t wb_sha224_internal_start(void **ctx_handle);
+
+error_t wb_sha256_internal_start(void **ctx_handle);
+
 static inline bool is_valid_hash_ctx(const wb_hash_base_ctx_t *ctx)
 {
     if (ctx == NULL) {
-        printf("Hash context is NULL\n");
+        WB_PRINTF("Hash context is NULL\n");
         return false;
     }
     if (ctx->magic != ((uintptr_t)ctx ^ ctx->type ^ WB_HASH_CTX_MAGIC)) {
-        printf("Hash context magic mismatch: expected %lx, got %lx\n",
+        WB_PRINTF("Hash context magic mismatch: expected %lx, got %lx\n",
                (uintptr_t)ctx ^ ctx->type ^ WB_HASH_CTX_MAGIC, ctx->magic);
         return false;
     }
     if (ctx->type >= WB_HASH_TYPE_MAX || ctx->type < WB_HASH_TYPE_SHA1) {
-        printf("Invalid hash type: %d\n", ctx->type);
+        WB_PRINTF("Invalid hash type: %d\n", ctx->type);
         return false;
     }
     if (ctx->buffer_len > ctx->block_size) {
-        printf("Buffer length exceeds block size: %u > %u\n", ctx->buffer_len, ctx->block_size);
+        WB_PRINTF("Buffer length exceeds block size: %u > %u\n", ctx->buffer_len, ctx->block_size);
         return false;
     }
     return true;

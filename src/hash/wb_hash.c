@@ -10,10 +10,10 @@ error_t wb_hash_start(hash_handle_t *ctx_handle, wb_hash_type_t type)
             ret = wb_sha1_internal_start(ctx_handle);
             break;
         case WB_HASH_TYPE_SHA224:
-            // ret = wb_sha224_internal_start(ctx_handle);
+            ret = wb_sha224_internal_start(ctx_handle);
             break;
         case WB_HASH_TYPE_SHA256:
-            // ret = wb_sha256_internal_start(ctx_handle);
+            ret = wb_sha256_internal_start(ctx_handle);
             break;
         case WB_HASH_TYPE_SHA384:
             // ret = wb_sha384_internal_start(ctx_handle);
@@ -22,13 +22,13 @@ error_t wb_hash_start(hash_handle_t *ctx_handle, wb_hash_type_t type)
             // ret = wb_sha512_internal_start(ctx_handle);
             break;
         case WB_HASH_TYPE_MAX:
-            printf("Invalid hash type: %x\n", type);
+            WB_PRINTF("Invalid hash type: %x\n", type);
             return WB_HASH_ERROR(WB_CRYPTO_INVALID_TYPE);
         case WB_HASH_TYPE_INVALID:
-            printf("Invalid hash type: %x\n", type);
+            WB_PRINTF("Invalid hash type: %x\n", type);
             return WB_HASH_ERROR(WB_CRYPTO_INVALID_TYPE);
         default:
-            printf("Unsupported hash type: %x\n", type);
+            WB_PRINTF("Unsupported hash type: %x\n", type);
             return WB_HASH_ERROR(WB_CRYPTO_INVALID_TYPE);
     }
 
@@ -93,19 +93,13 @@ error_t wb_hash_transform(wb_hash_type_t type, const uint8_t *data, size_t data_
     hash_handle_t ctx_handle = NULL;
 
     ret = wb_hash_start(&ctx_handle, type);
-    if (ret != WB_CRYPTO_SUCCESS) {
-        return ret;
-    }
+    WB_CHECK_RET(ret, ret);
 
     ret = wb_hash_update(ctx_handle, data, data_len);
-    if (ret != WB_CRYPTO_SUCCESS) {
-        return ret;
-    }
+    WB_CHECK_RET(ret, ret);
 
     ret = wb_hash_finish(ctx_handle, digest);
-    if (ret != WB_CRYPTO_SUCCESS) {
-        return ret;
-    }
+    WB_CHECK_RET(ret, ret);
 
     return WB_CRYPTO_SUCCESS;
 }

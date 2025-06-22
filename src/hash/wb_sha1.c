@@ -111,7 +111,7 @@ static void wb_sha1_internal_reset(void *ctx)
     sha1_ctx->state[3] = 0x10325476;
     sha1_ctx->state[4] = 0xC3D2E1F0;
     sha1_ctx->base.buffer_len = 0;
-    WB_MEMSET(sha1_ctx->buffer, 0, SHA1_BLOCK_SIZE);
+    WB_MEMSET_S(sha1_ctx->buffer, SHA1_BLOCK_SIZE, 0, SHA1_BLOCK_SIZE);
 }
 
 error_t wb_sha1_internal_start(void **ctx_handle)

@@ -9,6 +9,27 @@ error_t wb_hash_start(hash_handle_t *ctx_handle, wb_hash_type_t type)
         case WB_HASH_TYPE_SHA1:
             ret = wb_sha1_internal_start(ctx_handle);
             break;
+        case WB_HASH_TYPE_SHA224:
+            // ret = wb_sha224_internal_start(ctx_handle);
+            break;
+        case WB_HASH_TYPE_SHA256:
+            // ret = wb_sha256_internal_start(ctx_handle);
+            break;
+        case WB_HASH_TYPE_SHA384:
+            // ret = wb_sha384_internal_start(ctx_handle);
+            break;
+        case WB_HASH_TYPE_SHA512:
+            // ret = wb_sha512_internal_start(ctx_handle);
+            break;
+        case WB_HASH_TYPE_MAX:
+            printf("Invalid hash type: %d\n", type);
+            return WB_HASH_ERROR(WB_CRYPTO_INVALID_TYPE);
+        case WB_HASH_TYPE_INVALID:
+            printf("Invalid hash type: %d\n", type);
+            return WB_HASH_ERROR(WB_CRYPTO_INVALID_TYPE);
+        default:
+            printf("Unsupported hash type: %d\n", type);
+            return WB_HASH_ERROR(WB_CRYPTO_INVALID_TYPE);
     }
 
     return ret == WB_CRYPTO_SUCCESS ? WB_CRYPTO_SUCCESS : WB_HASH_ERROR(ret);

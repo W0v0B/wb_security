@@ -25,8 +25,7 @@ CPPFLAGS  :=
 # ---------------------------------------
 SRCS :=
 
-include src/hash/build.mk
-include src/symc/build.mk
+include src/build.mk
 
 # main application source files
 SRCS += test/main_app.c

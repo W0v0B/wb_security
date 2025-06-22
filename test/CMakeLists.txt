@@ -4,4 +4,4 @@
 
 add_executable(cipher_test main_app.c)
 
-target_link_libraries(cipher_test PRIVATE crypto_core)
+target_link_libraries(cipher_test PRIVATE crypto_core secure_utils)

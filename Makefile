@@ -16,9 +16,12 @@ TARGET := $(TARGET_DIR)/$(TARGET_NAME)
 BUILD_DIR     := obj
 
 # compiler flags
-CFLAGS    := -g -Wall -Iinclude -O2
+CFLAGS    := -g -Wall -O2
 LDFLAGS   :=
 CPPFLAGS  :=
+
+CFLAGS += -Iinclude
+CFLAGS += -Iutils
 
 # ---------------------------------------
 #	Source and Object Files
@@ -26,6 +29,7 @@ CPPFLAGS  :=
 SRCS :=
 
 include src/build.mk
+include utils/build.mk
 
 # main application source files
 SRCS += test/main_app.c

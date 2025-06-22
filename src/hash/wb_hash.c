@@ -22,13 +22,13 @@ error_t wb_hash_start(hash_handle_t *ctx_handle, wb_hash_type_t type)
             // ret = wb_sha512_internal_start(ctx_handle);
             break;
         case WB_HASH_TYPE_MAX:
-            printf("Invalid hash type: %d\n", type);
+            printf("Invalid hash type: %x\n", type);
             return WB_HASH_ERROR(WB_CRYPTO_INVALID_TYPE);
         case WB_HASH_TYPE_INVALID:
-            printf("Invalid hash type: %d\n", type);
+            printf("Invalid hash type: %x\n", type);
             return WB_HASH_ERROR(WB_CRYPTO_INVALID_TYPE);
         default:
-            printf("Unsupported hash type: %d\n", type);
+            printf("Unsupported hash type: %x\n", type);
             return WB_HASH_ERROR(WB_CRYPTO_INVALID_TYPE);
     }
 
@@ -43,16 +43,19 @@ error_t wb_hash_update(hash_handle_t ctx_handle, const uint8_t *data, size_t dat
     }
     WB_CHECK_EMPTY_RETURN(data, WB_HASH_ERROR(WB_CRYPTO_INVALID_ARG));
 
+    error_t ret = WB_CRYPTO_SUCCESS;
     size_t process_len = data_len;
     uint32_t space_in_buffer = hash_ctx->block_size - hash_ctx->buffer_len;
     
     if (data_len > space_in_buffer) {
-        WB_MEMCPY(hash_ctx->buffer_ptr + hash_ctx->buffer_len, data, space_in_buffer);
+        ret = WB_MEMCPY_S(hash_ctx->buffer_ptr + hash_ctx->buffer_len, space_in_buffer, data, space_in_buffer);
+        WB_CHECK_RET(ret, WB_HASH_ERROR(WB_CRYPTO_MEMCPY_FAILED));
         hash_ctx->compute_func(hash_ctx, hash_ctx->buffer_ptr);
         process_len -= space_in_buffer;
         hash_ctx->buffer_len = 0;
     } else {
-        WB_MEMCPY(hash_ctx->buffer_ptr + hash_ctx->buffer_len, data, data_len);
+        ret = WB_MEMCPY_S(hash_ctx->buffer_ptr + hash_ctx->buffer_len, space_in_buffer, data, data_len);
+        WB_CHECK_RET(ret, WB_HASH_ERROR(WB_CRYPTO_MEMCPY_FAILED));
         hash_ctx->buffer_len += data_len;
         return WB_CRYPTO_SUCCESS;
     }
@@ -62,7 +65,8 @@ error_t wb_hash_update(hash_handle_t ctx_handle, const uint8_t *data, size_t dat
         process_len -= hash_ctx->block_size;
     }
     if (process_len > 0) {
-        WB_MEMCPY(hash_ctx->buffer_ptr, data + (data_len - process_len), process_len);
+        ret = WB_MEMCPY_S(hash_ctx->buffer_ptr, hash_ctx->block_size, data + (data_len - process_len), process_len);
+        WB_CHECK_RET(ret, WB_HASH_ERROR(WB_CRYPTO_MEMCPY_FAILED));
         hash_ctx->buffer_len += process_len;
     }
 

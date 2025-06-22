@@ -79,11 +79,13 @@ static void wb_sha1_internal_padding(void *ctx)
     uint64_t total_bits = sha1_ctx->bit_count + (sha1_ctx->base.buffer_len * 8);
     sha1_ctx->buffer[sha1_ctx->base.buffer_len++] = 0x80;
     if (sha1_ctx->base.buffer_len > SHA1_BLOCK_SIZE - SHA1_TAIL_LEN) {
-        WB_MEMSET(sha1_ctx->buffer + sha1_ctx->base.buffer_len, 0, SHA1_BLOCK_SIZE - sha1_ctx->base.buffer_len);
+        WB_MEMSET_S(sha1_ctx->buffer + sha1_ctx->base.buffer_len, SHA1_BLOCK_SIZE - sha1_ctx->base.buffer_len,
+            0, SHA1_BLOCK_SIZE - sha1_ctx->base.buffer_len);
         sha1_ctx->base.compute_func(ctx, sha1_ctx->buffer);
         sha1_ctx->base.buffer_len = 0;
     }
-    WB_MEMSET(sha1_ctx->buffer + sha1_ctx->base.buffer_len, 0, SHA1_BLOCK_SIZE - SHA1_TAIL_LEN - sha1_ctx->base.buffer_len);
+    WB_MEMSET_S(sha1_ctx->buffer + sha1_ctx->base.buffer_len, SHA1_BLOCK_SIZE - sha1_ctx->base.buffer_len, 
+        0, SHA1_BLOCK_SIZE - SHA1_TAIL_LEN - sha1_ctx->base.buffer_len);
     wb_write_uint64_be(sha1_ctx->buffer + SHA1_BLOCK_SIZE - SHA1_TAIL_LEN, total_bits);
     sha1_ctx->base.compute_func(ctx, sha1_ctx->buffer);
 }
@@ -94,7 +96,7 @@ static void wb_sha1_internal_destroy(void *ctx, uint8_t *digest)
     for (int i = 0; i < 5 && digest != NULL; i++) {
         wb_write_uint32_be(digest + i * 4, sha1_ctx->state[i]);
     }
-    WB_MEMSET(sha1_ctx, 0, sizeof(wb_sha1_ctx_t));
+    WB_MEMSET_S(sha1_ctx, sizeof(wb_sha1_ctx_t), 0, sizeof(wb_sha1_ctx_t));
     WB_FREE(sha1_ctx);
     sha1_ctx = NULL;
 }

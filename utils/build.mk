@@ -1,7 +1,6 @@
 # ---------------------------------------
-#	src
+#	 Build Makefile for Secure Utils
 # ---------------------------------------
 
 SRCS += \
-	src/hash/wb_sha1.c \
-	src/hash/wb_hash.c
+	utils/secure_memory/wb_secure_utils.c

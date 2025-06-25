@@ -1,8 +1,8 @@
 #include "hash_internal.h"
 
-#define SHA1_BLOCK_SIZE 64
-#define SHA1_DIGEST_SIZE 20
-#define SHA1_TAIL_LEN 8
+#define SHA1_BLOCK_SIZE 64U
+#define SHA1_TAIL_LEN 8U
+#define SHA1_DIGEST_SIZE 20U
 
 typedef struct {
     wb_hash_base_ctx_t base;
@@ -24,7 +24,7 @@ static void wb_sha1_internal_compute(void *ctx, const uint8_t *block)
     
     for (; i < 80; i++) {
         temp = w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16];
-        w[i] = left_rotate(temp, 1);
+        w[i] = left_rotate32(temp, 1);
     }
 
     a = sha1_ctx->state[0];
@@ -34,34 +34,34 @@ static void wb_sha1_internal_compute(void *ctx, const uint8_t *block)
     e = sha1_ctx->state[4];
 
     for (i = 0; i < 20; i++) {
-        temp = left_rotate(a, 5) + ((b & c) | (~b & d)) + e + w[i] + 0x5A827999;
+        temp = left_rotate32(a, 5) + ((b & c) | (~b & d)) + e + w[i] + 0x5A827999;
         e = d;
         d = c;
-        c = left_rotate(b, 30);
+        c = left_rotate32(b, 30);
         b = a;
         a = temp;
     }
     for (; i < 40; i++) {
-        temp = left_rotate(a, 5) + (b ^ c ^ d) + e + w[i] + 0x6ED9EBA1;
+        temp = left_rotate32(a, 5) + (b ^ c ^ d) + e + w[i] + 0x6ED9EBA1;
         e = d;
         d = c;
-        c = left_rotate(b, 30);
+        c = left_rotate32(b, 30);
         b = a;
         a = temp;
     }
     for (; i < 60; i++) {
-        temp = left_rotate(a, 5) + ((b & c) | (b & d) | (c & d)) + e + w[i] + 0x8F1BBCDC;
+        temp = left_rotate32(a, 5) + ((b & c) | (b & d) | (c & d)) + e + w[i] + 0x8F1BBCDC;
         e = d;
         d = c;
-        c = left_rotate(b, 30);
+        c = left_rotate32(b, 30);
         b = a;
         a = temp;
     }
     for (; i < 80; i++) {
-        temp = left_rotate(a, 5) + (b ^ c ^ d) + e + w[i] + 0xCA62C1D6;
+        temp = left_rotate32(a, 5) + (b ^ c ^ d) + e + w[i] + 0xCA62C1D6;
         e = d;
         d = c;
-        c = left_rotate(b, 30);
+        c = left_rotate32(b, 30);
         b = a;
         a = temp;
     }
@@ -90,11 +90,13 @@ static void wb_sha1_internal_padding(void *ctx)
     sha1_ctx->base.compute_func(ctx, sha1_ctx->buffer);
 }
 
-static void wb_sha1_internal_destroy(void *ctx, uint8_t *digest)
+static void wb_sha1_internal_destroy(void *ctx, uint8_t *digest, size_t digest_len)
 {
     wb_sha1_ctx_t *sha1_ctx = (wb_sha1_ctx_t *)ctx;
-    for (int i = 0; i < 5 && digest != NULL; i++) {
-        wb_write_uint32_be(digest + i * 4, sha1_ctx->state[i]);
+    if (digest != NULL && digest_len >= SHA1_DIGEST_SIZE) {
+        for (int i = 0; i < 5; i++) {
+            wb_write_uint32_be(digest + i * 4, sha1_ctx->state[i]);
+        }
     }
     WB_MEMSET_S(sha1_ctx, sizeof(wb_sha1_ctx_t), 0, sizeof(wb_sha1_ctx_t));
     WB_FREE(sha1_ctx);
@@ -105,11 +107,11 @@ static void wb_sha1_internal_reset(void *ctx)
 {
     wb_sha1_ctx_t *sha1_ctx = (wb_sha1_ctx_t *)ctx;
     sha1_ctx->bit_count = 0;
-    sha1_ctx->state[0] = 0x67452301;
-    sha1_ctx->state[1] = 0xEFCDAB89;
-    sha1_ctx->state[2] = 0x98BADCFE;
-    sha1_ctx->state[3] = 0x10325476;
-    sha1_ctx->state[4] = 0xC3D2E1F0;
+    sha1_ctx->state[0] = 0x67452301U;
+    sha1_ctx->state[1] = 0xEFCDAB89U;
+    sha1_ctx->state[2] = 0x98BADCFEU;
+    sha1_ctx->state[3] = 0x10325476U;
+    sha1_ctx->state[4] = 0xC3D2E1F0U;
     sha1_ctx->base.buffer_len = 0;
     WB_MEMSET_S(sha1_ctx->buffer, SHA1_BLOCK_SIZE, 0, SHA1_BLOCK_SIZE);
 }
@@ -122,21 +124,15 @@ error_t wb_sha1_internal_start(void **ctx_handle)
     ctx->base.type = WB_HASH_TYPE_SHA1;
     ctx->base.block_size = SHA1_BLOCK_SIZE;
     ctx->base.buffer_ptr = ctx->buffer;
-    ctx->base.buffer_len = 0;
     ctx->base.compute_func = wb_sha1_internal_compute;
     ctx->base.padding_func = wb_sha1_internal_padding;
     ctx->base.destroy_func = wb_sha1_internal_destroy;
     ctx->base.reset_func = wb_sha1_internal_reset;
+
+    ctx->base.reset_func(ctx);
     ctx->base.magic = (uintptr_t)ctx ^ ctx->base.type ^ WB_HASH_CTX_MAGIC;
 
-    ctx->bit_count = 0;
-    ctx->state[0] = 0x67452301;
-    ctx->state[1] = 0xEFCDAB89;
-    ctx->state[2] = 0x98BADCFE;
-    ctx->state[3] = 0x10325476;
-    ctx->state[4] = 0xC3D2E1F0;
-
     *ctx_handle = (void *)ctx;
-    
+
     return WB_CRYPTO_SUCCESS;
 }

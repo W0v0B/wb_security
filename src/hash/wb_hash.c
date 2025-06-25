@@ -16,10 +16,10 @@ error_t wb_hash_start(hash_handle_t *ctx_handle, wb_hash_type_t type)
             ret = wb_sha256_internal_start(ctx_handle);
             break;
         case WB_HASH_TYPE_SHA384:
-            // ret = wb_sha384_internal_start(ctx_handle);
+            ret = wb_sha384_internal_start(ctx_handle);
             break;
         case WB_HASH_TYPE_SHA512:
-            // ret = wb_sha512_internal_start(ctx_handle);
+            ret = wb_sha512_internal_start(ctx_handle);
             break;
         case WB_HASH_TYPE_MAX:
             WB_PRINTF("Invalid hash type: %x\n", type);
@@ -73,7 +73,7 @@ error_t wb_hash_update(hash_handle_t ctx_handle, const uint8_t *data, size_t dat
     return WB_CRYPTO_SUCCESS;
 }
 
-error_t wb_hash_finish(hash_handle_t ctx_handle, uint8_t *digest)
+error_t wb_hash_finish(hash_handle_t ctx_handle, uint8_t *digest, size_t digest_len)
 {
     wb_hash_base_ctx_t *hash_ctx = (wb_hash_base_ctx_t *)ctx_handle;
     if (!is_valid_hash_ctx(hash_ctx)) {
@@ -82,12 +82,12 @@ error_t wb_hash_finish(hash_handle_t ctx_handle, uint8_t *digest)
     WB_CHECK_EMPTY_RETURN(digest, WB_HASH_ERROR(WB_CRYPTO_INVALID_ARG));
 
     hash_ctx->padding_func(hash_ctx);
-    hash_ctx->destroy_func(hash_ctx, digest);
+    hash_ctx->destroy_func(hash_ctx, digest, digest_len);
 
     return WB_CRYPTO_SUCCESS;
 }
 
-error_t wb_hash_transform(wb_hash_type_t type, const uint8_t *data, size_t data_len, uint8_t *digest)
+error_t wb_hash_transform(wb_hash_type_t type, const uint8_t *data, size_t data_len, uint8_t *digest, size_t digest_len)
 {
     error_t ret = WB_CRYPTO_SUCCESS;
     hash_handle_t ctx_handle = NULL;
@@ -98,7 +98,7 @@ error_t wb_hash_transform(wb_hash_type_t type, const uint8_t *data, size_t data_
     ret = wb_hash_update(ctx_handle, data, data_len);
     WB_CHECK_RET(ret, ret);
 
-    ret = wb_hash_finish(ctx_handle, digest);
+    ret = wb_hash_finish(ctx_handle, digest, digest_len);
     WB_CHECK_RET(ret, ret);
 
     return WB_CRYPTO_SUCCESS;

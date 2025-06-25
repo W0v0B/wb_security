@@ -8,8 +8,8 @@
  */
 typedef unsigned int error_t;
 
-#define WB_CRYPTO_SUCCESS           0
-#define WB_CRYPTO_ERROR             0xFFFFFFFF
+#define WB_CRYPTO_SUCCESS           0U
+#define WB_CRYPTO_ERROR             0xFFFFFFFFU
 
 
 // --- 错误码布局 ---

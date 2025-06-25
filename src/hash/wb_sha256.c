@@ -1,8 +1,10 @@
 #include "hash_internal.h"
 
-#define SHA256_BLOCK_SIZE 64
-#define SHA256_DIGEST_SIZE 32
-#define SHA256_TAIL_LEN 8
+#define SHA256_BLOCK_SIZE 64U
+#define SHA224_BLOCK_SIZE 64U
+#define SHA256_TAIL_LEN 8U
+#define SHA224_DIGEST_SIZE 28U
+#define SHA256_DIGEST_SIZE 32U
 
 typedef struct {
     wb_hash_base_ctx_t base;
@@ -11,15 +13,17 @@ typedef struct {
     uint64_t bit_count;
 } wb_sha256_ctx_t;
 
+typedef wb_sha256_ctx_t wb_sha224_ctx_t;
+
 static const uint32_t K[64] = {
-    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+    0x428a2f98U, 0x71374491U, 0xb5c0fbcfU, 0xe9b5dba5U, 0x3956c25bU, 0x59f111f1U, 0x923f82a4U, 0xab1c5ed5U,
+    0xd807aa98U, 0x12835b01U, 0x243185beU, 0x550c7dc3U, 0x72be5d74U, 0x80deb1feU, 0x9bdc06a7U, 0xc19bf174U,
+    0xe49b69c1U, 0xefbe4786U, 0x0fc19dc6U, 0x240ca1ccU, 0x2de92c6fU, 0x4a7484aaU, 0x5cb0a9dcU, 0x76f988daU,
+    0x983e5152U, 0xa831c66dU, 0xb00327c8U, 0xbf597fc7U, 0xc6e00bf3U, 0xd5a79147U, 0x06ca6351U, 0x14292967U,
+    0x27b70a85U, 0x2e1b2138U, 0x4d2c6dfcU, 0x53380d13U, 0x650a7354U, 0x766a0abbU, 0x81c2c92eU, 0x92722c85U,
+    0xa2bfe8a1U, 0xa81a664bU, 0xc24b8b70U, 0xc76c51a3U, 0xd192e819U, 0xd6990624U, 0xf40e3585U, 0x106aa070U,
+    0x19a4c116U, 0x1e376c08U, 0x2748774cU, 0x34b0bcb5U, 0x391c0cb3U, 0x4ed8aa4aU, 0x5b9cca4fU, 0x682e6ff3U,
+    0x748f82eeU, 0x78a5636fU, 0x84c87814U, 0x8cc70208U, 0x90befffaU, 0xa4506cebU, 0xbef9a3f7U, 0xc67178f2U
 };
 
 static void wb_sha256_internal_compute(void *ctx, const uint8_t *block)
@@ -34,8 +38,8 @@ static void wb_sha256_internal_compute(void *ctx, const uint8_t *block)
     }
     
     for (; i < 64; i++) {
-        temp1 = right_rotate(w[i-15], 7) ^ right_rotate(w[i-15], 18) ^ (w[i-15] >> 3);
-        temp2 = right_rotate(w[i-2], 17) ^ right_rotate(w[i-2], 19) ^ (w[i-2] >> 10);
+        temp1 = right_rotate32(w[i-15], 7) ^ right_rotate32(w[i-15], 18) ^ (w[i-15] >> 3);
+        temp2 = right_rotate32(w[i-2], 17) ^ right_rotate32(w[i-2], 19) ^ (w[i-2] >> 10);
         w[i] = w[i-16] + temp1 + w[i-7] + temp2;
     }
 
@@ -49,8 +53,8 @@ static void wb_sha256_internal_compute(void *ctx, const uint8_t *block)
     h = sha256_ctx->state[7];
 
     for (i = 0; i < 64; i++) {
-        temp1 = h + (right_rotate(e, 6) ^ right_rotate(e, 11) ^ right_rotate(e, 25)) + ((e & f) ^ (~e & g)) + w[i] + K[i];
-        temp2 = (right_rotate(a, 2) ^ right_rotate(a, 13) ^ right_rotate(a, 22)) + ((a & b) ^ (a & c) ^ (b & c));
+        temp1 = h + (right_rotate32(e, 6) ^ right_rotate32(e, 11) ^ right_rotate32(e, 25)) + ((e & f) ^ (~e & g)) + w[i] + K[i];
+        temp2 = (right_rotate32(a, 2) ^ right_rotate32(a, 13) ^ right_rotate32(a, 22)) + ((a & b) ^ (a & c) ^ (b & c));
         h = g;
         g = f;
         f = e;
@@ -88,11 +92,13 @@ static void wb_sha256_internal_padding(void *ctx)
     sha256_ctx->base.compute_func(ctx, sha256_ctx->buffer);
 }
 
-static void wb_sha256_internal_destroy(void *ctx, uint8_t *digest)
+static void wb_sha256_internal_destroy(void *ctx, uint8_t *digest, size_t digest_len)
 {
     wb_sha256_ctx_t *sha256_ctx = (wb_sha256_ctx_t *)ctx;
-    for (int i = 0; i < 8 && digest != NULL; i++) {
-        wb_write_uint32_be(digest + i * 4, sha256_ctx->state[i]);
+    if (digest != NULL && digest_len >= SHA256_DIGEST_SIZE) {
+        for (int i = 0; i < 8; i++) {
+            wb_write_uint32_be(digest + i * 4, sha256_ctx->state[i]);
+        }
     }
     WB_MEMSET_S(sha256_ctx, sizeof(wb_sha256_ctx_t), 0, sizeof(wb_sha256_ctx_t));
     WB_FREE(sha256_ctx);
@@ -103,14 +109,14 @@ static void wb_sha256_internal_reset(void *ctx)
 {
     wb_sha256_ctx_t *sha256_ctx = (wb_sha256_ctx_t *)ctx;
     sha256_ctx->bit_count = 0;
-    sha256_ctx->state[0] = 0x6A09E667;
-    sha256_ctx->state[1] = 0xBB67AE85;
-    sha256_ctx->state[2] = 0x3C6EF372;
-    sha256_ctx->state[3] = 0xA54FF53A;
-    sha256_ctx->state[4] = 0x510E527F;
-    sha256_ctx->state[5] = 0x9B05688C;
-    sha256_ctx->state[6] = 0x1F83D9AB;
-    sha256_ctx->state[7] = 0x5BE0CD19;
+    sha256_ctx->state[0] = 0x6A09E667U;
+    sha256_ctx->state[1] = 0xBB67AE85U;
+    sha256_ctx->state[2] = 0x3C6EF372U;
+    sha256_ctx->state[3] = 0xA54FF53AU;
+    sha256_ctx->state[4] = 0x510E527FU;
+    sha256_ctx->state[5] = 0x9B05688CU;
+    sha256_ctx->state[6] = 0x1F83D9ABU;
+    sha256_ctx->state[7] = 0x5BE0CD19U;
     sha256_ctx->base.buffer_len = 0;
     WB_MEMSET_S(sha256_ctx->buffer, SHA256_BLOCK_SIZE, 0, SHA256_BLOCK_SIZE);
 }
@@ -123,79 +129,63 @@ error_t wb_sha256_internal_start(void **ctx_handle)
     ctx->base.type = WB_HASH_TYPE_SHA256;
     ctx->base.block_size = SHA256_BLOCK_SIZE;
     ctx->base.buffer_ptr = ctx->buffer;
-    ctx->base.buffer_len = 0;
     ctx->base.compute_func = wb_sha256_internal_compute;
     ctx->base.padding_func = wb_sha256_internal_padding;
     ctx->base.destroy_func = wb_sha256_internal_destroy;
     ctx->base.reset_func = wb_sha256_internal_reset;
+    
+    ctx->base.reset_func(ctx);
     ctx->base.magic = (uintptr_t)ctx ^ ctx->base.type ^ WB_HASH_CTX_MAGIC;
-
-    ctx->bit_count = 0;
-    ctx->state[0] = 0x6A09E667;
-    ctx->state[1] = 0xBB67AE85;
-    ctx->state[2] = 0x3C6EF372;
-    ctx->state[3] = 0xA54FF53A;
-    ctx->state[4] = 0x510E527F;
-    ctx->state[5] = 0x9B05688C;
-    ctx->state[6] = 0x1F83D9AB;
-    ctx->state[7] = 0x5BE0CD19;
 
     *ctx_handle = (void *)ctx;
     
     return WB_CRYPTO_SUCCESS;
 }
 
-static void wb_sha224_internal_destroy(void *ctx, uint8_t *digest)
+static void wb_sha224_internal_destroy(void *ctx, uint8_t *digest, size_t digest_len)
 {
-    wb_sha256_ctx_t *sha256_ctx = (wb_sha256_ctx_t *)ctx;
-    for (int i = 0; i < 7 && digest != NULL; i++) {
-        wb_write_uint32_be(digest + i * 4, sha256_ctx->state[i]);
+    wb_sha224_ctx_t *sha224_ctx = (wb_sha224_ctx_t *)ctx;
+    if (digest != NULL && digest_len >= SHA224_DIGEST_SIZE) {
+        for (int i = 0; i < 7; i++) {
+            wb_write_uint32_be(digest + i * 4, sha224_ctx->state[i]);
+        }
     }
-    WB_MEMSET_S(sha256_ctx, sizeof(wb_sha256_ctx_t), 0, sizeof(wb_sha256_ctx_t));
-    WB_FREE(sha256_ctx);
-    sha256_ctx = NULL;
+    WB_MEMSET_S(sha224_ctx, sizeof(wb_sha224_ctx_t), 0, sizeof(wb_sha224_ctx_t));
+    WB_FREE(sha224_ctx);
+    sha224_ctx = NULL;
 }
 
 static void wb_sha224_internal_reset(void *ctx)
 {
-    wb_sha256_ctx_t *sha256_ctx = (wb_sha256_ctx_t *)ctx;
-    sha256_ctx->bit_count = 0;
-    sha256_ctx->state[0] = 0xC1059ED8;
-    sha256_ctx->state[1] = 0x367CD507;
-    sha256_ctx->state[2] = 0x3070DD17;
-    sha256_ctx->state[3] = 0xF70E5939;
-    sha256_ctx->state[4] = 0xFFC00B31;
-    sha256_ctx->state[5] = 0x68581511;
-    sha256_ctx->state[6] = 0x64F98FA7;
-    sha256_ctx->state[7] = 0xBEFA4FA4;
-    sha256_ctx->base.buffer_len = 0;
-    WB_MEMSET_S(sha256_ctx->buffer, SHA256_BLOCK_SIZE, 0, SHA256_BLOCK_SIZE);
+    wb_sha224_ctx_t *sha224_ctx = (wb_sha224_ctx_t *)ctx;
+    sha224_ctx->bit_count = 0;
+    sha224_ctx->state[0] = 0xC1059ED8U;
+    sha224_ctx->state[1] = 0x367CD507U;
+    sha224_ctx->state[2] = 0x3070DD17U;
+    sha224_ctx->state[3] = 0xF70E5939U;
+    sha224_ctx->state[4] = 0xFFC00B31U;
+    sha224_ctx->state[5] = 0x68581511U;
+    sha224_ctx->state[6] = 0x64F98FA7U;
+    sha224_ctx->state[7] = 0xBEFA4FA4U;
+    sha224_ctx->base.buffer_len = 0;
+    WB_MEMSET_S(sha224_ctx->buffer, SHA256_BLOCK_SIZE, 0, SHA256_BLOCK_SIZE);
 }
 
 error_t wb_sha224_internal_start(void **ctx_handle)
 {
-    wb_sha256_ctx_t *ctx = (wb_sha256_ctx_t *)WB_MALLOC(sizeof(wb_sha256_ctx_t));
+    wb_sha224_ctx_t *ctx = (wb_sha224_ctx_t *)WB_MALLOC(sizeof(wb_sha224_ctx_t));
     WB_CHECK_EMPTY_RETURN(ctx, WB_CRYPTO_MALLOC_FAIL);
 
     ctx->base.type = WB_HASH_TYPE_SHA224;
-    ctx->base.block_size = SHA256_BLOCK_SIZE;
+    ctx->base.block_size = SHA224_BLOCK_SIZE;
     ctx->base.buffer_ptr = ctx->buffer;
-    ctx->base.buffer_len = 0;
     ctx->base.compute_func = wb_sha256_internal_compute;
     ctx->base.padding_func = wb_sha256_internal_padding;
     ctx->base.destroy_func = wb_sha224_internal_destroy;
     ctx->base.reset_func = wb_sha224_internal_reset;
-    ctx->base.magic = (uintptr_t)ctx ^ ctx->base.type ^ WB_HASH_CTX_MAGIC;
 
-    ctx->bit_count = 0;
-    ctx->state[0] = 0xC1059ED8;
-    ctx->state[1] = 0x367CD507;
-    ctx->state[2] = 0x3070DD17;
-    ctx->state[3] = 0xF70E5939;
-    ctx->state[4] = 0xFFC00B31;
-    ctx->state[5] = 0x68581511;
-    ctx->state[6] = 0x64F98FA7;
-    ctx->state[7] = 0xBEFA4FA4;
+    ctx->base.reset_func(ctx);
+    ctx->base.magic = (uintptr_t)ctx ^ ctx->base.type ^ WB_HASH_CTX_MAGIC;
 
     *ctx_handle = (void *)ctx;
 

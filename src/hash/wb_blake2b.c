@@ -103,7 +103,7 @@ static void wb_blake2b_internal_padding(void *ctx)
         blake2b_ctx->count[0]++;
     }
     blake2b_ctx->flag[0] = 0xFFFFFFFFFFFFFFFFULL;
-    WB_MEMSET_S(blake2b_ctx->buffer + blake2b_ctx->base.buffer_len, BLAKE2B_BLOCK_SIZE - blake2b_ctx->base.buffer_len,
+    (void)WB_MEMSET_S(blake2b_ctx->buffer + blake2b_ctx->base.buffer_len, BLAKE2B_BLOCK_SIZE - blake2b_ctx->base.buffer_len,
         0, BLAKE2B_BLOCK_SIZE - blake2b_ctx->base.buffer_len);
     blake2b_ctx->base.compute_func(ctx, blake2b_ctx->buffer);
 }
@@ -116,10 +116,10 @@ static void wb_blake2b_internal_destroy(void *ctx, uint8_t *digest, size_t diges
         for (int i = 0; i < 8; i++) {
             wb_write_uint64_le(temp_digest + i * sizeof(uint64_t), blake2b_ctx->state[i]);
         }
-        WB_MEMCPY_S(digest, digest_len, temp_digest, blake2b_ctx->digest_len);
-        WB_MEMSET_FREE_S(temp_digest, BLAKE2B_MAX_DIGEST_SIZE, 0, BLAKE2B_MAX_DIGEST_SIZE);
+        (void)WB_MEMCPY_S(digest, digest_len, temp_digest, blake2b_ctx->digest_len);
+        (void)WB_MEMSET_FREE_S(temp_digest, BLAKE2B_MAX_DIGEST_SIZE, 0, BLAKE2B_MAX_DIGEST_SIZE);
     }
-    WB_MEMSET_FREE_S(blake2b_ctx, sizeof(wb_blake2b_ctx_t), 0, sizeof(wb_blake2b_ctx_t));
+    (void)WB_MEMSET_FREE_S(blake2b_ctx, sizeof(wb_blake2b_ctx_t), 0, sizeof(wb_blake2b_ctx_t));
     free(blake2b_ctx);
     blake2b_ctx = NULL;
 }
@@ -148,7 +148,7 @@ static void wb_blake2b_internal_reset(void *ctx)
     blake2b_ctx->state[7] = blake2b_iv[7];
 
     if (blake2b_ctx->base.buffer_len > 0) {
-        WB_MEMSET_S(blake2b_ctx->buffer + blake2b_ctx->base.buffer_len, BLAKE2B_BLOCK_SIZE - blake2b_ctx->base.buffer_len,
+        (void)WB_MEMSET_S(blake2b_ctx->buffer + blake2b_ctx->base.buffer_len, BLAKE2B_BLOCK_SIZE - blake2b_ctx->base.buffer_len,
             0, BLAKE2B_BLOCK_SIZE - blake2b_ctx->base.buffer_len);
         blake2b_ctx->base.compute_func(ctx, blake2b_ctx->buffer);
     }
@@ -169,6 +169,7 @@ error_t wb_blake2b_internal_start(void **ctx_handle, size_t digest_len)
     ctx->base.type = WB_HASH_TYPE_BLAKE2B;
     ctx->base.block_size = BLAKE2B_BLOCK_SIZE;
     ctx->base.buffer_ptr = ctx->buffer;
+    ctx->base.buffer_len = 0;
     ctx->base.compute_func = wb_blake2b_internal_compute;
     ctx->base.padding_func = wb_blake2b_internal_padding;
     ctx->base.destroy_func = wb_blake2b_internal_destroy;

@@ -22,17 +22,23 @@
         printf("[WB_LOG] " fmt, ##__VA_ARGS__); \
     } while(0)
 
+#define WB_ERROR_PRINTF(fmt, ...) \
+    do { \
+        printf("[WB_ERROR] " fmt, ##__VA_ARGS__); \
+    } while(0)
+
 #define WB_CHECK_EMPTY_RETURN(ptr, err_code) \
     do { \
         if ((ptr) == NULL) { \
+            WB_ERROR_PRINTF("[%s:%d] Check ptr Failed! ptr is NULL\n", __func__, __LINE__); \
             return (err_code); \
         } \
     } while(0)
 
-#define WB_CHECK_RET(ret, err_code) \
+#define WB_CHECK_RET_RETURN(ret, err_code) \
     do { \
         if ((ret) != (0)) { \
-            WB_PRINTF("[%s:%d] Check Failed! ret = 0x%x\n", __func__, __LINE__, (ret)); \
+            WB_ERROR_PRINTF("[%s:%d] Check ret Failed! ret = 0x%x\n", __func__, __LINE__, (ret)); \
             return (err_code); \
         } \
     } while(0)

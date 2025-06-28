@@ -103,12 +103,12 @@ static void wb_sha512_internal_padding(void *ctx)
     uint64_t total_bits[2] = { sha512_ctx->bit_count[0], sha512_ctx->bit_count[1] };
     sha512_ctx->buffer[sha512_ctx->base.buffer_len++] = 0x80;
     if (sha512_ctx->base.buffer_len > SHA512_BLOCK_SIZE - SHA512_TAIL_LEN) {
-        WB_MEMSET_S(sha512_ctx->buffer + sha512_ctx->base.buffer_len, SHA512_BLOCK_SIZE - sha512_ctx->base.buffer_len,
+        (void)WB_MEMSET_S(sha512_ctx->buffer + sha512_ctx->base.buffer_len, SHA512_BLOCK_SIZE - sha512_ctx->base.buffer_len,
             0, SHA512_BLOCK_SIZE - sha512_ctx->base.buffer_len);
         sha512_ctx->base.compute_func(ctx, sha512_ctx->buffer);
         sha512_ctx->base.buffer_len = 0;
     }
-    WB_MEMSET_S(sha512_ctx->buffer + sha512_ctx->base.buffer_len, SHA512_BLOCK_SIZE - sha512_ctx->base.buffer_len,
+    (void)WB_MEMSET_S(sha512_ctx->buffer + sha512_ctx->base.buffer_len, SHA512_BLOCK_SIZE - sha512_ctx->base.buffer_len,
         0, SHA512_BLOCK_SIZE - sha512_ctx->base.buffer_len - SHA512_TAIL_LEN);
     wb_write_uint64_be(sha512_ctx->buffer + SHA512_BLOCK_SIZE - SHA512_TAIL_LEN, total_bits[0]);
     wb_write_uint64_be(sha512_ctx->buffer + SHA512_BLOCK_SIZE - SHA512_TAIL_LEN + 8, total_bits[1]);
@@ -123,7 +123,7 @@ static void wb_sha512_internal_destroy(void *ctx, uint8_t *digest, size_t digest
             wb_write_uint64_be(digest + i * 8, sha512_ctx->state[i]);
         }
     }
-    WB_MEMSET_FREE_S(sha512_ctx, sizeof(wb_sha512_ctx_t), 0, sizeof(wb_sha512_ctx_t));
+    (void)WB_MEMSET_FREE_S(sha512_ctx, sizeof(wb_sha512_ctx_t), 0, sizeof(wb_sha512_ctx_t));
     WB_FREE(sha512_ctx);
     sha512_ctx = NULL;
 }
@@ -143,7 +143,7 @@ static void wb_sha512_internal_reset(void *ctx)
     sha512_ctx->state[7] = 0x5BE0CD19137E2179ULL;
 
     sha512_ctx->base.buffer_len = 0;
-    WB_MEMSET_S(sha512_ctx->buffer, SHA512_BLOCK_SIZE, 0, SHA512_BLOCK_SIZE);
+    (void)WB_MEMSET_S(sha512_ctx->buffer, SHA512_BLOCK_SIZE, 0, SHA512_BLOCK_SIZE);
 }
 
 error_t wb_sha512_internal_start(void **ctx_handle)
@@ -175,7 +175,7 @@ static void wb_sha384_internal_destroy(void *ctx, uint8_t *digest, size_t digest
             wb_write_uint64_be(digest + i * 8, sha384_ctx->state[i]);
         }
     }
-    WB_MEMSET_FREE_S(sha384_ctx, sizeof(wb_sha384_ctx_t), 0, sizeof(wb_sha384_ctx_t));
+    (void)WB_MEMSET_FREE_S(sha384_ctx, sizeof(wb_sha384_ctx_t), 0, sizeof(wb_sha384_ctx_t));
     WB_FREE(sha384_ctx);
     sha384_ctx = NULL;
 }
@@ -195,7 +195,7 @@ static void wb_sha384_internal_reset(void *ctx)
     sha384_ctx->state[7] = 0x47B5481DBEFA4FA4ULL;
 
     sha384_ctx->base.buffer_len = 0;
-    WB_MEMSET_S(sha384_ctx->buffer, SHA512_BLOCK_SIZE, 0, SHA512_BLOCK_SIZE);
+    (void)WB_MEMSET_S(sha384_ctx->buffer, SHA512_BLOCK_SIZE, 0, SHA512_BLOCK_SIZE);
 }
 
 error_t wb_sha384_internal_start(void **ctx_handle)

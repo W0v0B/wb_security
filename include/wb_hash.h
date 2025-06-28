@@ -27,10 +27,13 @@ error_t wb_hash_transform(wb_hash_type_t type, const uint8_t *data, size_t data_
 
 error_t wb_hash_reset(hash_handle_t ctx_handle);
 
-error_t wb_blake2b_set_key(hash_handle_t ctx_handle, const uint8_t *key, size_t key_len);
+error_t wb_blake_set_key(hash_handle_t ctx_handle, const uint8_t *key, size_t key_len);
 
-error_t wb_blake2b_set_digest_length(hash_handle_t *ctx_handle, size_t digest_len);
+error_t wb_blake_set_digest_length(hash_handle_t *ctx_handle, size_t digest_len);
 
-error_t wb_blake2b_reset(hash_handle_t *ctx_handle, const uint8_t *key, size_t key_len, size_t digest_len);
+error_t wb_blake_reset(hash_handle_t *ctx_handle, const uint8_t *key, size_t key_len, size_t digest_len);
+
+error_t wb_hash_blake_transform(wb_hash_type_t type, const uint8_t *data, size_t data_len,
+    const uint8_t *key, size_t key_len, uint8_t *digest, size_t digest_len);
 
 #endif // WB_SHA1_H

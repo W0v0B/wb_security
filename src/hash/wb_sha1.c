@@ -98,7 +98,7 @@ static void wb_sha1_internal_destroy(void *ctx, uint8_t *digest, size_t digest_l
             wb_write_uint32_be(digest + i * 4, sha1_ctx->state[i]);
         }
     }
-    WB_MEMSET_S(sha1_ctx, sizeof(wb_sha1_ctx_t), 0, sizeof(wb_sha1_ctx_t));
+    WB_MEMSET_FREE_S(sha1_ctx, sizeof(wb_sha1_ctx_t), 0, sizeof(wb_sha1_ctx_t));
     WB_FREE(sha1_ctx);
     sha1_ctx = NULL;
 }

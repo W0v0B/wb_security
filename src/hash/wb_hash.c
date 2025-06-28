@@ -21,6 +21,9 @@ error_t wb_hash_start(hash_handle_t *ctx_handle, wb_hash_type_t type)
         case WB_HASH_TYPE_SHA512:
             ret = wb_sha512_internal_start(ctx_handle);
             break;
+        case WB_HASH_TYPE_BLAKE2B:
+            ret = wb_blake2b_internal_start(ctx_handle, 0);
+            break;
         case WB_HASH_TYPE_MAX:
             WB_PRINTF("Invalid hash type: %x\n", type);
             return WB_HASH_ERROR(WB_CRYPTO_INVALID_TYPE);
@@ -113,4 +116,45 @@ error_t wb_hash_reset(hash_handle_t ctx_handle)
 
     hash_ctx->reset_func(hash_ctx);
     return WB_CRYPTO_SUCCESS;
+}
+
+error_t wb_blake2b_set_key(hash_handle_t ctx_handle, const uint8_t *key, size_t key_len)
+{
+    wb_hash_base_ctx_t *blake2b_ctx = (wb_hash_base_ctx_t *)ctx_handle;
+    if (!is_valid_hash_ctx(blake2b_ctx) || key_len > 64) {
+        return WB_HASH_ERROR(WB_CRYPTO_CTX_INVALID);
+    }
+    if (key != NULL && key_len > 0) {
+        WB_MEMCPY_S(blake2b_ctx->buffer_ptr, blake2b_ctx->block_size, key, key_len);
+        blake2b_ctx->buffer_len = key_len;
+    }
+
+    return WB_CRYPTO_SUCCESS;
+}
+
+error_t wb_blake2b_set_digest_length(hash_handle_t *ctx_handle, size_t digest_len)
+{
+    wb_hash_base_ctx_t *blake2b_ctx = (wb_hash_base_ctx_t *)*ctx_handle;
+    if (!is_valid_hash_ctx(blake2b_ctx) || (digest_len > 64 && digest_len != 0)) {
+        return WB_HASH_ERROR(WB_CRYPTO_CTX_INVALID);
+    }
+    wb_blake2b_internal_start((void **)ctx_handle, digest_len);
+    return WB_CRYPTO_SUCCESS;
+}
+
+error_t wb_blake2b_reset(hash_handle_t *ctx_handle, const uint8_t *key, size_t key_len, size_t digest_len)
+{
+    wb_hash_base_ctx_t *blake2b_ctx = (wb_hash_base_ctx_t *)*ctx_handle;
+    if (!is_valid_hash_ctx(blake2b_ctx) || key_len > 64 || digest_len > 64 || digest_len == 0) {
+        return WB_HASH_ERROR(WB_CRYPTO_CTX_INVALID);
+    }
+    WB_MEMSET_S(blake2b_ctx->buffer_ptr, blake2b_ctx->block_size, 0, blake2b_ctx->block_size);
+    if (key != NULL && key_len > 0) {
+        WB_MEMCPY_S(blake2b_ctx->buffer_ptr, blake2b_ctx->block_size, key, key_len);
+        blake2b_ctx->buffer_len = key_len;
+        return wb_blake2b_internal_start((void **)ctx_handle, digest_len);
+    } else {
+        blake2b_ctx->buffer_len = 0;
+        return wb_blake2b_internal_start((void **)ctx_handle, digest_len);
+    }
 }

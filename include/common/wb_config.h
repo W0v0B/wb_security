@@ -13,6 +13,7 @@
 #define WB_MEMCPY_S(dest, destsz, src, count)           memcpy_s(dest, destsz, src, count)
 #define WB_MEMSET(ptr, value, size)                     memset(ptr, value, size)
 #define WB_MEMSET_S(ptr, size, value, count)            memset_s(ptr, size, value, count)
+#define WB_MEMSET_FREE_S(ptr, size, value, count)       memset_free_s(ptr, size, value, count)
 
 #endif // WB_USER_CONFIG
 

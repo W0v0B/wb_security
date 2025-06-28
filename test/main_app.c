@@ -4,7 +4,11 @@
 
 int main() {
     error_t ret;
+    hash_handle_t ctx_handle = NULL;
     const char *data = "abc";
+    uint32_t data_len = strlen(data);
+    const char *key = "key";
+    uint32_t key_len = strlen(key);
     uint8_t digest[64];
     uint32_t digest_len = 64;
 
@@ -14,62 +18,40 @@ int main() {
     }
     printf("\n");
 
-    ret = wb_hash_transform(WB_HASH_TYPE_SHA1, (uint8_t *)data, strlen(data), digest, digest_len);
-    if (ret != WB_CRYPTO_SUCCESS) {
-        printf("Failed to transform sha1 ret: %x\n", ret);
-        return -1;
-    }
-
-    printf("SHA1   Digest: ");
-    for (int i = 0; i < 20; i++) {
-        printf("%02x", digest[i]);
+    printf("key data: ");
+    for (int i = 0; i < strlen(key); i++) {
+        printf("%c", key[i]);
     }
     printf("\n");
 
-    ret = wb_hash_transform(WB_HASH_TYPE_SHA224, (uint8_t *)data, strlen(data), digest, digest_len);
+    ret = wb_hash_start(&ctx_handle, WB_HASH_TYPE_BLAKE2B);
     if (ret != WB_CRYPTO_SUCCESS) {
-        printf("Failed to transform sha224 ret: %x\n", ret);
+        printf("Failed to start BLAKE2B ret: %x\n", ret);
+        return -1;
+    }
+    ret = wb_blake2b_set_key(ctx_handle, (const uint8_t *)key, key_len);
+    if (ret != WB_CRYPTO_SUCCESS) {
+        printf("Failed to BLAKE2B set key ret: %x\n", ret);
+        return -1;
+    }
+    ret = wb_blake2b_set_digest_length(&ctx_handle, digest_len);
+    if (ret != WB_CRYPTO_SUCCESS) {
+        printf("Failed to BLAKE2B set digest length ret: %x\n", ret);
+        return -1;
+    }
+    ret = wb_hash_update(ctx_handle, (const uint8_t *)data, data_len);
+    if (ret != WB_CRYPTO_SUCCESS) {
+        printf("Failed to update BLAKE2B ret: %x\n", ret);
+        return -1;
+    }
+    ret = wb_hash_finish(ctx_handle, digest, digest_len);
+    if (ret != WB_CRYPTO_SUCCESS) {
+        printf("Failed to finish BLAKE2B ret: %x\n", ret);
         return -1;
     }
 
-    printf("SHA224 Digest: ");
-    for (int i = 0; i < 28; i++) {
-        printf("%02x", digest[i]);
-    }
-    printf("\n");
-
-    ret = wb_hash_transform(WB_HASH_TYPE_SHA256, (uint8_t *)data, strlen(data), digest, digest_len);
-    if (ret != WB_CRYPTO_SUCCESS) {
-        printf("Failed to transform sha256 ret: %x\n", ret);
-        return -1;
-    }
-
-    printf("SHA256 Digest: ");
-    for (int i = 0; i < 32; i++) {
-        printf("%02x", digest[i]);
-    }
-    printf("\n");
-
-    ret = wb_hash_transform(WB_HASH_TYPE_SHA384, (uint8_t *)data, strlen(data), digest, digest_len);
-    if (ret != WB_CRYPTO_SUCCESS) {
-        printf("Failed to transform sha384 ret: %x\n", ret);
-        return -1;
-    }
-
-    printf("SHA384 Digest: ");
-    for (int i = 0; i < 48; i++) {
-        printf("%02x", digest[i]);
-    }
-    printf("\n");
-
-    ret = wb_hash_transform(WB_HASH_TYPE_SHA512, (uint8_t *)data, strlen(data), digest, digest_len);
-    if (ret != WB_CRYPTO_SUCCESS) {
-        printf("Failed to transform sha512 ret: %x\n", ret);
-        return -1;
-    }
-
-    printf("SHA512 Digest: ");
-    for (int i = 0; i < 64; i++) {
+    printf("BLAKE2B Digest: ");
+    for (int i = 0; i < digest_len; i++) {
         printf("%02x", digest[i]);
     }
     printf("\n");

@@ -33,6 +33,8 @@ error_t wb_sha384_internal_start(void **ctx_handle);
 
 error_t wb_sha512_internal_start(void **ctx_handle);
 
+error_t wb_blake2b_internal_start(void **ctx_handle, size_t digest_len);
+
 static inline bool is_valid_hash_ctx(const wb_hash_base_ctx_t *ctx)
 {
     if (ctx == NULL) {

@@ -100,7 +100,7 @@ static void wb_sha256_internal_destroy(void *ctx, uint8_t *digest, size_t digest
             wb_write_uint32_be(digest + i * 4, sha256_ctx->state[i]);
         }
     }
-    WB_MEMSET_S(sha256_ctx, sizeof(wb_sha256_ctx_t), 0, sizeof(wb_sha256_ctx_t));
+    WB_MEMSET_FREE_S(sha256_ctx, sizeof(wb_sha256_ctx_t), 0, sizeof(wb_sha256_ctx_t));
     WB_FREE(sha256_ctx);
     sha256_ctx = NULL;
 }
@@ -150,7 +150,7 @@ static void wb_sha224_internal_destroy(void *ctx, uint8_t *digest, size_t digest
             wb_write_uint32_be(digest + i * 4, sha224_ctx->state[i]);
         }
     }
-    WB_MEMSET_S(sha224_ctx, sizeof(wb_sha224_ctx_t), 0, sizeof(wb_sha224_ctx_t));
+    WB_MEMSET_FREE_S(sha224_ctx, sizeof(wb_sha224_ctx_t), 0, sizeof(wb_sha224_ctx_t));
     WB_FREE(sha224_ctx);
     sha224_ctx = NULL;
 }

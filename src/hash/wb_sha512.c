@@ -93,7 +93,7 @@ static void wb_sha512_internal_compute(void *ctx, const uint8_t *block)
     }
 }
 
-static void wb_sha512_internal_padding(void *ctx)
+static void wb_sha512_internal_finish(void *ctx, uint8_t *digest, size_t digest_len)
 {
     wb_sha512_ctx_t *sha512_ctx = (wb_sha512_ctx_t *)ctx;
     sha512_ctx->bit_count[1] += (uint64_t)(sha512_ctx->base.buffer_len * 8);
@@ -113,19 +113,17 @@ static void wb_sha512_internal_padding(void *ctx)
     wb_write_uint64_be(sha512_ctx->buffer + SHA512_BLOCK_SIZE - SHA512_TAIL_LEN, total_bits[0]);
     wb_write_uint64_be(sha512_ctx->buffer + SHA512_BLOCK_SIZE - SHA512_TAIL_LEN + 8, total_bits[1]);
     sha512_ctx->base.compute_func(ctx, sha512_ctx->buffer);
+
+    for (int i = 0; i < sha512_ctx->base.digest_len / sizeof(uint64_t); i++) {
+        wb_write_uint64_be(digest + i * sizeof(uint64_t), sha512_ctx->state[i]);
+    }
 }
 
-static void wb_sha512_internal_destroy(void *ctx, uint8_t *digest, size_t digest_len)
+static void wb_sha512_internal_destroy(void *ctx)
 {
-    wb_sha512_ctx_t *sha512_ctx = (wb_sha512_ctx_t *)ctx;
-    if (digest != NULL && digest_len >= SHA512_DIGEST_SIZE) {
-        for (int i = 0; i < 8; i++) {
-            wb_write_uint64_be(digest + i * 8, sha512_ctx->state[i]);
-        }
-    }
-    (void)WB_MEMSET_FREE_S(sha512_ctx, sizeof(wb_sha512_ctx_t), 0, sizeof(wb_sha512_ctx_t));
-    WB_FREE(sha512_ctx);
-    sha512_ctx = NULL;
+    (void)WB_MEMSET_FREE_S(ctx, sizeof(wb_sha512_ctx_t), 0, sizeof(wb_sha512_ctx_t));
+    WB_FREE(ctx);
+    ctx = NULL;
 }
 
 static void wb_sha512_internal_reset(void *ctx)
@@ -153,9 +151,10 @@ error_t wb_sha512_internal_start(void **ctx_handle)
 
     ctx->base.type = WB_HASH_TYPE_SHA512;
     ctx->base.block_size = SHA512_BLOCK_SIZE;
+    ctx->base.digest_len = SHA512_DIGEST_SIZE;
     ctx->base.buffer_ptr = ctx->buffer;
     ctx->base.compute_func = wb_sha512_internal_compute;
-    ctx->base.padding_func = wb_sha512_internal_padding;
+    ctx->base.finish_func = wb_sha512_internal_finish;
     ctx->base.destroy_func = wb_sha512_internal_destroy;
     ctx->base.reset_func = wb_sha512_internal_reset;
 
@@ -165,19 +164,6 @@ error_t wb_sha512_internal_start(void **ctx_handle)
     *ctx_handle = (void *)ctx;
 
     return WB_CRYPTO_SUCCESS;
-}
-
-static void wb_sha384_internal_destroy(void *ctx, uint8_t *digest, size_t digest_len)
-{
-    wb_sha384_ctx_t *sha384_ctx = (wb_sha384_ctx_t *)ctx;
-    if (digest != NULL && digest_len >= SHA384_DIGEST_SIZE) {
-        for (int i = 0; i < 6; i++) {
-            wb_write_uint64_be(digest + i * 8, sha384_ctx->state[i]);
-        }
-    }
-    (void)WB_MEMSET_FREE_S(sha384_ctx, sizeof(wb_sha384_ctx_t), 0, sizeof(wb_sha384_ctx_t));
-    WB_FREE(sha384_ctx);
-    sha384_ctx = NULL;
 }
 
 static void wb_sha384_internal_reset(void *ctx)
@@ -205,10 +191,11 @@ error_t wb_sha384_internal_start(void **ctx_handle)
 
     ctx->base.type = WB_HASH_TYPE_SHA384;
     ctx->base.block_size = SHA384_BLOCK_SIZE;
+    ctx->base.digest_len = SHA384_DIGEST_SIZE;
     ctx->base.buffer_ptr = ctx->buffer;
     ctx->base.compute_func = wb_sha512_internal_compute;
-    ctx->base.padding_func = wb_sha512_internal_padding;
-    ctx->base.destroy_func = wb_sha384_internal_destroy;
+    ctx->base.finish_func = wb_sha512_internal_finish;
+    ctx->base.destroy_func = wb_sha512_internal_destroy;
     ctx->base.reset_func = wb_sha384_internal_reset;
 
     ctx->base.reset_func(ctx);

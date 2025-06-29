@@ -73,10 +73,11 @@ static void wb_sha1_internal_compute(void *ctx, const uint8_t *block)
     sha1_ctx->bit_count += SHA1_BLOCK_SIZE * 8;
 }
 
-static void wb_sha1_internal_padding(void *ctx)
+static void wb_sha1_internal_finish(void *ctx, uint8_t *digest, size_t digest_len)
 {
     wb_sha1_ctx_t *sha1_ctx = (wb_sha1_ctx_t *)ctx;
     uint64_t total_bits = sha1_ctx->bit_count + (sha1_ctx->base.buffer_len * 8);
+
     sha1_ctx->buffer[sha1_ctx->base.buffer_len++] = 0x80;
     if (sha1_ctx->base.buffer_len > SHA1_BLOCK_SIZE - SHA1_TAIL_LEN) {
         (void)WB_MEMSET_S(sha1_ctx->buffer + sha1_ctx->base.buffer_len, SHA1_BLOCK_SIZE - sha1_ctx->base.buffer_len,
@@ -88,19 +89,17 @@ static void wb_sha1_internal_padding(void *ctx)
         0, SHA1_BLOCK_SIZE - SHA1_TAIL_LEN - sha1_ctx->base.buffer_len);
     wb_write_uint64_be(sha1_ctx->buffer + SHA1_BLOCK_SIZE - SHA1_TAIL_LEN, total_bits);
     sha1_ctx->base.compute_func(ctx, sha1_ctx->buffer);
+
+    for (int i = 0; i < sha1_ctx->base.digest_len / sizeof(uint32_t); i++) {
+        wb_write_uint32_be(digest + i * sizeof(uint32_t), sha1_ctx->state[i]);
+    }
 }
 
-static void wb_sha1_internal_destroy(void *ctx, uint8_t *digest, size_t digest_len)
+static void wb_sha1_internal_destroy(void *ctx)
 {
-    wb_sha1_ctx_t *sha1_ctx = (wb_sha1_ctx_t *)ctx;
-    if (digest != NULL && digest_len >= SHA1_DIGEST_SIZE) {
-        for (int i = 0; i < 5; i++) {
-            wb_write_uint32_be(digest + i * 4, sha1_ctx->state[i]);
-        }
-    }
-    (void)WB_MEMSET_FREE_S(sha1_ctx, sizeof(wb_sha1_ctx_t), 0, sizeof(wb_sha1_ctx_t));
-    WB_FREE(sha1_ctx);
-    sha1_ctx = NULL;
+    (void)WB_MEMSET_FREE_S(ctx, sizeof(wb_sha1_ctx_t), 0, sizeof(wb_sha1_ctx_t));
+    WB_FREE(ctx);
+    ctx = NULL;
 }
 
 static void wb_sha1_internal_reset(void *ctx)
@@ -123,9 +122,10 @@ error_t wb_sha1_internal_start(void **ctx_handle)
 
     ctx->base.type = WB_HASH_TYPE_SHA1;
     ctx->base.block_size = SHA1_BLOCK_SIZE;
+    ctx->base.digest_len = SHA1_DIGEST_SIZE;
     ctx->base.buffer_ptr = ctx->buffer;
     ctx->base.compute_func = wb_sha1_internal_compute;
-    ctx->base.padding_func = wb_sha1_internal_padding;
+    ctx->base.finish_func = wb_sha1_internal_finish;
     ctx->base.destroy_func = wb_sha1_internal_destroy;
     ctx->base.reset_func = wb_sha1_internal_reset;
 

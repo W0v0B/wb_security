@@ -35,10 +35,62 @@
         } \
     } while(0)
 
-#define WB_CHECK_RET_RETURN(ret, err_code) \
+#define WB_CHECK_EQ(val, expected) \
     do { \
-        if ((ret) != (0)) { \
-            WB_ERROR_PRINTF("[%s:%d] Check ret Failed! ret = 0x%x\n", __func__, __LINE__, (ret)); \
+        if ((val) != (expected)) { \
+            WB_ERROR_PRINTF("%s WB_CHECK_EQ Failed! [%s:%d]\n", __func__, __FILE__, __LINE__); \
+        } \
+    } while(0)
+
+#define WB_CHECK_NE(val, expected) \
+    do { \
+        if ((val) == (expected)) { \
+            WB_ERROR_PRINTF("%s WB_CHECK_NE Failed! [%s:%d]\n", __func__, __FILE__, __LINE__); \
+        } \
+    } while(0)
+
+#define WB_CHECK_GT(val, expected) \
+    do { \
+        if ((val) < (expected)) { \
+            WB_ERROR_PRINTF("%s WB_CHECK_GT Failed! [%s:%d]\n", __func__, __FILE__, __LINE__); \
+        } \
+    } while(0)
+
+#define WB_CHECK_LT(val, expected) \
+    do { \
+        if ((val) > (expected)) { \
+            WB_ERROR_PRINTF("%s WB_CHECK_LT Failed! [%s:%d]\n", __func__, __FILE__, __LINE__); \
+        } \
+    } while(0)
+
+#define WB_CHECK_EQ_RETURN(val, expected, err_code) \
+    do { \
+        if ((val) != (expected)) { \
+            WB_ERROR_PRINTF("%s WB_CHECK_EQ Failed! [%s:%d] (ret = 0x%x)\n", __func__, __FILE__, __LINE__, (err_code)); \
+            return (err_code); \
+        } \
+    } while(0)
+
+#define WB_CHECK_NE_RETURN(val, expected, err_code) \
+    do { \
+        if ((val) == (expected)) { \
+            WB_ERROR_PRINTF("%s WB_CHECK_NE Failed! [%s:%d] (ret = 0x%x)\n", __func__, __FILE__, __LINE__, (err_code)); \
+            return (err_code); \
+        } \
+    } while(0)
+
+#define WB_CHECK_GT_RETURN(val, expected, err_code) \
+    do { \
+        if ((val) < (expected)) { \
+            WB_ERROR_PRINTF("%s WB_CHECK_GT Failed! [%s:%d] (ret = 0x%x)\n", __func__, __FILE__, __LINE__, (err_code)); \
+            return (err_code); \
+        } \
+    } while(0)
+
+#define WB_CHECK_LT_RETURN(val, expected, err_code) \
+    do { \
+        if ((val) > (expected)) { \
+            WB_ERROR_PRINTF("%s WB_CHECK_LT Failed! [%s:%d] (ret = 0x%x)\n", __func__, __FILE__, __LINE__, (err_code)); \
             return (err_code); \
         } \
     } while(0)

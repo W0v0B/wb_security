@@ -36,4 +36,6 @@ error_t wb_blake_reset(hash_handle_t *ctx_handle, const uint8_t *key, size_t key
 error_t wb_hash_blake_transform(wb_hash_type_t type, const uint8_t *data, size_t data_len,
     const uint8_t *key, size_t key_len, uint8_t *digest, size_t digest_len);
 
+error_t wb_hash_destroy(hash_handle_t *ctx_handle);
+
 #endif // WB_SHA1_H

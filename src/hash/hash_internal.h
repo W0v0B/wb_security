@@ -5,18 +5,19 @@
 
 typedef struct wb_hash_base_ctx_t wb_hash_base_ctx_t;
 typedef void (*hash_compute_func_t)(void *ctx, const uint8_t *block);
-typedef void (*hash_padding_func_t)(void *ctx);
-typedef void (*hash_destroy_func_t)(void *ctx, uint8_t *digest, size_t digest_len);
+typedef void (*hash_finish_func_t)(void *ctx, uint8_t *digest, size_t digest_len);
+typedef void (*hash_destroy_func_t)(void *ctx);
 typedef void (*hash_reset_func_t)(void *ctx);
 
 struct wb_hash_base_ctx_t{
     uintptr_t magic;
     wb_hash_type_t type;
+    uint32_t digest_len;
     uint32_t block_size;
     uint32_t buffer_len;
     uint8_t *buffer_ptr;
     hash_compute_func_t compute_func;
-    hash_padding_func_t padding_func;
+    hash_finish_func_t finish_func;
     hash_destroy_func_t destroy_func;
     hash_reset_func_t reset_func;
 };
@@ -38,20 +39,20 @@ error_t wb_blake2b_internal_start(void **ctx_handle, size_t digest_len);
 static inline bool is_valid_hash_ctx(const wb_hash_base_ctx_t *ctx)
 {
     if (ctx == NULL) {
-        WB_PRINTF("Hash context is NULL\n");
+        WB_ERROR_PRINTF("Hash context is NULL\n");
         return false;
     }
     if (ctx->magic != ((uintptr_t)ctx ^ ctx->type ^ WB_HASH_CTX_MAGIC)) {
-        WB_PRINTF("Hash context magic mismatch: expected %lx, got %lx\n",
+        WB_ERROR_PRINTF("Hash context magic mismatch: expected %lx, got %lx\n",
                (uintptr_t)ctx ^ ctx->type ^ WB_HASH_CTX_MAGIC, ctx->magic);
         return false;
     }
     if (ctx->type >= WB_HASH_TYPE_MAX || ctx->type < WB_HASH_TYPE_SHA1) {
-        WB_PRINTF("Invalid hash type: %d\n", ctx->type);
+        WB_ERROR_PRINTF("Invalid hash type: %d\n", ctx->type);
         return false;
     }
     if (ctx->buffer_len > ctx->block_size) {
-        WB_PRINTF("Buffer length exceeds block size: %u > %u\n", ctx->buffer_len, ctx->block_size);
+        WB_ERROR_PRINTF("Buffer length exceeds block size: %u > %u\n", ctx->buffer_len, ctx->block_size);
         return false;
     }
     return true;

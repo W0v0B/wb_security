@@ -6,7 +6,6 @@
 
 typedef struct {
     wb_hash_base_ctx_t base;
-    uint8_t digest_len;
     uint8_t buffer[BLAKE2B_BLOCK_SIZE];
     uint64_t state[8];
     uint64_t count[2];
@@ -94,9 +93,10 @@ static void wb_blake2b_internal_compute(void *ctx, const uint8_t *block)
     }
 }
 
-static void wb_blake2b_internal_padding(void *ctx)
+static void wb_blake2b_internal_finish(void *ctx, uint8_t *digest, size_t digest_len)
 {
     wb_blake2b_ctx_t *blake2b_ctx = (wb_blake2b_ctx_t *)ctx;
+    uint8_t temp_digest[BLAKE2B_MAX_DIGEST_SIZE];
 
     blake2b_ctx->count[1] += blake2b_ctx->base.buffer_len;
     if (blake2b_ctx->count[1] < blake2b_ctx->base.buffer_len) {
@@ -106,22 +106,19 @@ static void wb_blake2b_internal_padding(void *ctx)
     (void)WB_MEMSET_S(blake2b_ctx->buffer + blake2b_ctx->base.buffer_len, BLAKE2B_BLOCK_SIZE - blake2b_ctx->base.buffer_len,
         0, BLAKE2B_BLOCK_SIZE - blake2b_ctx->base.buffer_len);
     blake2b_ctx->base.compute_func(ctx, blake2b_ctx->buffer);
+
+    for (int i = 0; i < blake2b_ctx->base.digest_len / sizeof(uint64_t); i++) {
+        wb_write_uint64_le(temp_digest + i * sizeof(uint64_t), blake2b_ctx->state[i]);
+    }
+    (void)WB_MEMCPY_S(digest, digest_len, temp_digest, blake2b_ctx->base.digest_len);
+    (void)WB_MEMSET_FREE_S(temp_digest, BLAKE2B_MAX_DIGEST_SIZE, 0, BLAKE2B_MAX_DIGEST_SIZE);
 }
 
-static void wb_blake2b_internal_destroy(void *ctx, uint8_t *digest, size_t digest_len)
+static void wb_blake2b_internal_destroy(void *ctx)
 {
-    wb_blake2b_ctx_t *blake2b_ctx = (wb_blake2b_ctx_t *)ctx;
-    if (digest != NULL && digest_len >= blake2b_ctx->digest_len) {
-        uint8_t temp_digest[BLAKE2B_MAX_DIGEST_SIZE];
-        for (int i = 0; i < 8; i++) {
-            wb_write_uint64_le(temp_digest + i * sizeof(uint64_t), blake2b_ctx->state[i]);
-        }
-        (void)WB_MEMCPY_S(digest, digest_len, temp_digest, blake2b_ctx->digest_len);
-        (void)WB_MEMSET_FREE_S(temp_digest, BLAKE2B_MAX_DIGEST_SIZE, 0, BLAKE2B_MAX_DIGEST_SIZE);
-    }
-    (void)WB_MEMSET_FREE_S(blake2b_ctx, sizeof(wb_blake2b_ctx_t), 0, sizeof(wb_blake2b_ctx_t));
-    free(blake2b_ctx);
-    blake2b_ctx = NULL;
+    (void)WB_MEMSET_FREE_S(ctx, sizeof(wb_blake2b_ctx_t), 0, sizeof(wb_blake2b_ctx_t));
+    free(ctx);
+    ctx = NULL;
 }
 
 static void wb_blake2b_internal_reset(void *ctx)
@@ -133,7 +130,7 @@ static void wb_blake2b_internal_reset(void *ctx)
     blake2b_ctx->flag[0] = 0;
     blake2b_ctx->flag[1] = 0;
 
-    param_word |= (uint64_t)(blake2b_ctx->digest_len);
+    param_word |= (uint64_t)(blake2b_ctx->base.digest_len);
     param_word |= ((uint64_t)(blake2b_ctx->base.buffer_len) << 8);
     param_word |= (1ULL << 16);
     param_word |= (1ULL << 24);
@@ -159,7 +156,7 @@ error_t wb_blake2b_internal_start(void **ctx_handle, size_t digest_len)
 {
     if (digest_len != 0) {
         wb_blake2b_ctx_t *ctx = (wb_blake2b_ctx_t *)*ctx_handle;
-        ctx->digest_len = (uint8_t)digest_len;
+        ctx->base.digest_len = (uint8_t)digest_len;
         ctx->base.reset_func(*ctx_handle);
         return WB_CRYPTO_SUCCESS;
     }
@@ -167,14 +164,14 @@ error_t wb_blake2b_internal_start(void **ctx_handle, size_t digest_len)
     WB_CHECK_EMPTY_RETURN(ctx, WB_CRYPTO_MALLOC_FAIL);
 
     ctx->base.type = WB_HASH_TYPE_BLAKE2B;
+    ctx->base.digest_len = 0;
     ctx->base.block_size = BLAKE2B_BLOCK_SIZE;
     ctx->base.buffer_ptr = ctx->buffer;
     ctx->base.buffer_len = 0;
     ctx->base.compute_func = wb_blake2b_internal_compute;
-    ctx->base.padding_func = wb_blake2b_internal_padding;
+    ctx->base.finish_func = wb_blake2b_internal_finish;
     ctx->base.destroy_func = wb_blake2b_internal_destroy;
     ctx->base.reset_func = wb_blake2b_internal_reset;
-    ctx->digest_len = 0;
     ctx->base.magic = (uintptr_t)ctx ^ ctx->base.type ^ WB_HASH_CTX_MAGIC;
 
     *ctx_handle = (void *)ctx;
